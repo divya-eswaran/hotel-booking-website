@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hotel Room Booking</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: #1c1c1c;
+            color: #fff;
+        }
+
+        /* Top Header */
+        .header {
+            background: #f7c8c8;
+            color: #4b2c2c;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .header h1 {
+            margin: 0;
+        }
+
+        .header p {
+            margin-top: 5px;
+            font-size: 14px;
+        }
+
+        /* Main Card */
+        .card {
+            width: 450px;
+            margin: 40px auto;
+            background: #111;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px #ff9aa2;
+        }
+
+        h2 {
+            text-align: center;
+            color: #ff9aa2;
+            margin-bottom: 20px;
+        }
+
+        fieldset {
+            border: 2px solid #ff9aa2;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+        }
+
+        legend {
+            padding: 0 10px;
+            color: #ffb3b3;
+            font-weight: bold;
+        }
+
+        label {
+            font-size: 14px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border: none;
+            background: #2c2c2c;
+            color: white;
+        }
+
+        textarea {
+            resize: none;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        button {
+            width: 48%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .book {
+            background: #ff9aa2;
+            color: #111;
+        }
+
+        .print {
+            background: #ccc;
+            color: #111;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    <h1>🏨 Hotel Room Booking</h1>
+    <p>Book your stay with comfort and luxury!</p>
+</div>
+
+<div class="card">
+
+    <h2>RESERVATION FORM</h2>
+
+    <form id="bookingForm">
+
+        <fieldset>
+            <legend>📌 Personal Information</legend>
+
+            <label>Full Name:</label>
+            <input type="text" id="name" required>
+
+            <label>Email Address:</label>
+            <input type="email" id="email" required>
+
+            <label>Phone Number:</label>
+            <input type="text" id="phone" required>
+        </fieldset>
+
+        <fieldset>
+            <legend>🛏 Booking Details</legend>
+
+            <label>Room Type:</label>
+            <select id="roomType">
+                <option value="Single">Single</option>
+                <option value="Double">Double</option>
+                <option value="Suite">Suite</option>
+            </select>
+
+            <label>Number of Guests:</label>
+            <input type="number" id="guests" min="1" required>
+
+            <label>Check-in Date:</label>
+            <input type="date" id="checkIn" required>
+
+            <label>Check-out Date:</label>
+            <input type="date" id="checkOut" required>
+        </fieldset>
+
+        <fieldset>
+            <legend>✨ Additional Requests</legend>
+
+            <label>Special Requests:</label>
+            <textarea id="requests" rows="3"></textarea>
+        </fieldset>
+
+        <div class="buttons">
+            <button type="submit" class="book">✔ Book Now</button>
+            <button type="button" class="print" onclick="printReceipt()">🖨 Print Receipt</button>
+        </div>
+
+    </form>
+</div>
+
+<script>
+
+    const API = "http://localhost:5000";
+
+    document.getElementById("bookingForm")
+    .addEventListener("submit", async function(e) {
+        e.preventDefault();
+
+        const data = {
+            name: name.value,
+            email: email.value,
+            phone: phone.value,
+            roomType: roomType.value,
+            checkIn: checkIn.value,
+            checkOut: checkOut.value
+        };
+
+        const response = await fetch(API + "/book", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        alert("Booking Successful 💗");
+    });
+
+    function printReceipt() {
+        window.print();
+    }
+
+</script>
+
+</body>
+</html>
