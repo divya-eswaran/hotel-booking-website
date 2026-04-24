@@ -11,10 +11,10 @@
             color: #fff;
         }
 
-        /* Top Header */
+        /* HEADER */
         .header {
-            background: #f7c8c8;
-            color: #4b2c2c;
+            background: #d08c7d;
+            color: #2b1b18;
             text-align: center;
             padding: 20px;
         }
@@ -28,7 +28,7 @@
             font-size: 14px;
         }
 
-        /* Main Card */
+        /* CARD */
         .card {
             width: 450px;
             margin: 40px auto;
@@ -41,7 +41,6 @@
         h2 {
             text-align: center;
             color: #ff9aa2;
-            margin-bottom: 20px;
         }
 
         fieldset {
@@ -72,10 +71,6 @@
             color: white;
         }
 
-        textarea {
-            resize: none;
-        }
-
         .buttons {
             display: flex;
             justify-content: space-between;
@@ -88,21 +83,43 @@
             border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
-            transition: 0.3s;
         }
 
-        .book {
-            background: #ff9aa2;
-            color: #111;
+        .book { background: #ff9aa2; }
+        .print { background: #ccc; }
+
+        /* LOGIN POPUP */
+        #loginBox {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        .print {
-            background: #ccc;
-            color: #111;
+        .login-card {
+            background: #111;
+            padding: 25px;
+            width: 300px;
+            border-radius: 10px;
         }
 
-        button:hover {
-            transform: scale(1.05);
+        .login-card input {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: none;
+            background: #2c2c2c;
+            color: white;
+        }
+
+        .login-card button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
         }
 
     </style>
@@ -110,11 +127,26 @@
 
 <body>
 
+<!-- HEADER -->
 <div class="header">
     <h1>🏨 Hotel Room Booking</h1>
     <p>Book your stay with comfort and luxury!</p>
 </div>
 
+<!-- LOGIN -->
+<div id="loginBox">
+    <div class="login-card">
+        <h3>Login / Register</h3>
+
+        <input type="email" id="loginEmail" placeholder="Email">
+        <input type="password" id="loginPassword" placeholder="Password">
+
+        <button onclick="login()" style="background:#ff9aa2">Login</button>
+        <button onclick="register()" style="background:#ccc">Register</button>
+    </div>
+</div>
+
+<!-- BOOKING FORM -->
 <div class="card">
 
     <h2>RESERVATION FORM</h2>
@@ -139,31 +171,21 @@
 
             <label>Room Type:</label>
             <select id="roomType">
-                <option value="Single">Single</option>
-                <option value="Double">Double</option>
-                <option value="Suite">Suite</option>
+                <option>Single</option>
+                <option>Double</option>
+                <option>Suite</option>
             </select>
 
-            <label>Number of Guests:</label>
-            <input type="number" id="guests" min="1" required>
+            <label>Check-in:</label>
+            <input type="date" id="checkIn">
 
-            <label>Check-in Date:</label>
-            <input type="date" id="checkIn" required>
-
-            <label>Check-out Date:</label>
-            <input type="date" id="checkOut" required>
-        </fieldset>
-
-        <fieldset>
-            <legend>✨ Additional Requests</legend>
-
-            <label>Special Requests:</label>
-            <textarea id="requests" rows="3"></textarea>
+            <label>Check-out:</label>
+            <input type="date" id="checkOut">
         </fieldset>
 
         <div class="buttons">
-            <button type="submit" class="book">✔ Book Now</button>
-            <button type="button" class="print" onclick="printReceipt()">🖨 Print Receipt</button>
+            <button type="submit" class="book">Book Now</button>
+            <button type="button" class="print" onclick="window.print()">Print</button>
         </div>
 
     </form>
@@ -171,34 +193,80 @@
 
 <script>
 
-    const API = "http://localhost:5000";
+const API="http://localhost:5000";
 
-    document.getElementById("bookingForm")
-    .addEventListener("submit", async function(e) {
-        e.preventDefault();
+/* LOGIN FIRST */
+window.onload=()=>{
+document.getElementById("loginBox").style.display="flex";
+};
 
-        const data = {
-            name: name.value,
-            email: email.value,
-            phone: phone.value,
-            roomType: roomType.value,
-            checkIn: checkIn.value,
-            checkOut: checkOut.value
-        };
+/* LOGIN */
+async function login(){
+const res=await fetch(API+"/login",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+email:loginEmail.value,
+password:loginPassword.value
+})
+});
 
-        const response = await fetch(API + "/book", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data)
-        });
+const data=await res.json();
 
-        const result = await response.json();
-        alert("Booking Successful 💗");
-    });
+if(res.ok){
+alert("Login Success 💗");
+document.getElementById("loginBox").style.display="none";
+}else{
+alert(data.message);
+}
+}
 
-    function printReceipt() {
-        window.print();
-    }
+/* REGISTER */
+async function register(){
+const res=await fetch(API+"/register",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+email:loginEmail.value,
+password:loginPassword.value
+})
+});
+
+const data=await res.json();
+
+if(res.ok){
+alert("Registered 💗 Now login");
+}else{
+alert(data.message);
+}
+}
+
+/* BOOKING */
+document.getElementById("bookingForm").addEventListener("submit", async function(e){
+e.preventDefault();
+
+const res=await fetch(API+"/book",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+name:name.value,
+email:email.value,
+phone:phone.value,
+roomType:roomType.value,
+checkIn:checkIn.value,
+checkOut:checkOut.value
+})
+});
+
+const data=await res.json();
+
+if(res.ok){
+alert("Booking Successful 💗 ₹"+data.totalAmount);
+document.getElementById("bookingForm").reset();
+}else{
+alert(data.message);
+}
+});
 
 </script>
 
