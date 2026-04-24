@@ -3,113 +3,127 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 
 const app = express();
+
 app.use(express.json());
 app.use(cors());
+app.use(express.static("public"));
 
-/* ==============================
-   MongoDB Connection
-============================== */
-
+/* ======================
+   DATABASE CONNECTION
+====================== */
 mongoose.connect("mongodb://127.0.0.1:27017/hotelDB")
 .then(() => console.log("MongoDB Connected 💗"))
 .catch(err => console.log(err));
 
-
-/* ==============================
-   SCHEMAS (All in One File)
-============================== */
-
-// Hotel Schema
-const hotelSchema = new mongoose.Schema({
-    name: String,
-    location: String
+/* ======================
+   USER MODEL
+====================== */
+const userSchema = new mongoose.Schema({
+    email: String,
+    password: String
 });
-const Hotel = mongoose.model("Hotel", hotelSchema);
+const User = mongoose.model("User", userSchema);
 
-// Room Schema
-const roomSchema = new mongoose.Schema({
-    hotelId: { type: mongoose.Schema.Types.ObjectId, ref: "Hotel" },
-    roomType: String,
-    price: Number
-});
-const Room = mongoose.model("Room", roomSchema);
-
-// Customer Schema
-const customerSchema = new mongoose.Schema({
+/* ======================
+   BOOKING MODEL
+====================== */
+const bookingSchema = new mongoose.Schema({
     name: String,
     email: String,
-    phone: String
-});
-const Customer = mongoose.model("Customer", customerSchema);
-
-// Booking Schema
-const bookingSchema = new mongoose.Schema({
-    customerId: { type: mongoose.Schema.Types.ObjectId, ref: "Customer" },
-    roomId: { type: mongoose.Schema.Types.ObjectId, ref: "Room" },
+    phone: String,
+    roomType: String,
     checkIn: Date,
     checkOut: Date,
     totalAmount: Number
 });
 const Booking = mongoose.model("Booking", bookingSchema);
 
+/* ======================
+   REGISTER
+====================== */
+app.post("/register", async (req, res) => {
+    const { email, password } = req.body;
 
-/* ==============================
-   ROUTES
-============================== */
-
-// 📌 Add Booking
-app.post("/book", async (req, res) => {
-    try {
-        const { name, email, phone, roomType, checkIn, checkOut } = req.body;
-
-        // Save Customer
-        const customer = new Customer({ name, email, phone });
-        await customer.save();
-
-        // Find Room
-        const room = await Room.findOne({ roomType });
-
-        if (!room) {
-            return res.json({ message: "Room not found ❌" });
-        }
-
-        // Create Booking
-        const booking = new Booking({
-            customerId: customer._id,
-            roomId: room._id,
-            checkIn,
-            checkOut,
-            totalAmount: room.price
-        });
-
-        await booking.save();
-
-        res.json({ message: "Booking Successful 💗" });
-
-    } catch (error) {
-        res.status(500).json({ error: error.message });
+    const exists = await User.findOne({ email });
+    if (exists) {
+        return res.status(400).json({ message: "User already exists ❌" });
     }
+
+    await new User({ email, password }).save();
+    res.json({ message: "Registered 💗" });
 });
 
+/* ======================
+   LOGIN
+====================== */
+app.post("/login", async (req, res) => {
+    const { email, password } = req.body;
 
-// 📌 View All Bookings (JOIN using populate)
+    const user = await User.findOne({ email, password });
+
+    if (!user) {
+        return res.status(401).json({ message: "Invalid email or password ❌" });
+    }
+
+    res.json({ message: "Login success 💗" });
+});
+
+/* ======================
+   BOOK ROOM
+====================== */
+app.post("/book", async (req, res) => {
+    const { name, email, phone, roomType, checkIn, checkOut } = req.body;
+
+    // validation
+    if (!/^\d{10}$/.test(phone)) {
+        return res.status(400).json({ message: "Invalid phone ❌" });
+    }
+
+    const start = new Date(checkIn);
+    const end = new Date(checkOut);
+
+    if (end <= start) {
+        return res.status(400).json({ message: "Invalid dates ❌" });
+    }
+
+    const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+
+    const pricePerDay = 2000;
+    const totalAmount = days * pricePerDay;
+
+    await new Booking({
+        name,
+        email,
+        phone,
+        roomType,
+        checkIn,
+        checkOut,
+        totalAmount
+    }).save();
+
+    res.json({
+        message: "Booking Successful 💗",
+        totalAmount,
+        days
+    });
+});
+
+/* ======================
+   GET BOOKINGS
+====================== */
 app.get("/bookings", async (req, res) => {
-
-    const bookings = await Booking.find()
-        .populate("customerId")
-        .populate({
-            path: "roomId",
-            populate: { path: "hotelId" }
-        });
-
-    res.json(bookings);
+    res.json(await Booking.find());
 });
 
-
-/* ==============================
-   START SERVER
-============================== */
-
-app.listen(5000, () => {
-    console.log("Server running on port 5000 🚀");
+/* ======================
+   DELETE BOOKING
+====================== */
+app.delete("/bookings/:id", async (req, res) => {
+    await Booking.findByIdAndDelete(req.params.id);
+    res.json({ message: "Deleted ❌" });
 });
+
+/* ======================
+   SERVER START
+====================== */
+app.listen(5000, () => console.log("Server running 🚀"));
